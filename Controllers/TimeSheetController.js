@@ -271,11 +271,9 @@ module.exports.getAllByEmployee = async (req, res, next) => {
       const weekNumber = getWeekNumber(today);
       let lastPayDay;
       if (weekNumber % 2 === 0) {
-        // If current week is even, the last pay day was on the previous odd week
         lastPayDay = new Date(today);
         lastPayDay.setDate(today.getDate() - 14 - (today.getDay() - employee.payDay));
       } else {
-        // If current week is odd, the last pay day was on the current odd week
         lastPayDay = new Date(today);
         lastPayDay.setDate(today.getDate() - 7 - (today.getDay() - employee.payDay));
       }
@@ -291,11 +289,9 @@ module.exports.getAllByEmployee = async (req, res, next) => {
       let lastPayDay;
       let curMonthPayDay;
       if (thisMonthPayDay <= today) {
-        // If the pay day is before today, the last pay day was in the previous month
         lastPayDay = new Date(Date.UTC(today.getFullYear(), today.getMonth(), employee.payDay));
         curMonthPayDay = new Date(Date.UTC(today.getFullYear(), today.getMonth() + 1, employee.payDay));
       } else {
-        // If the pay day is after today, the last pay day was in the previous month
         lastPayDay = new Date(Date.UTC(today.getFullYear(), today.getMonth() - 1, employee.payDay));
         curMonthPayDay = new Date(Date.UTC(today.getFullYear(), today.getMonth(), employee.payDay));
       }
