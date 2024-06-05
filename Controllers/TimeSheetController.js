@@ -108,13 +108,12 @@ module.exports.getEmployeeCountsByType = async (req, res, next) => {
 module.exports.getClockInOutByEmployee = async (req, res, next) => {
   try {
     const { employee_id } = req.query;
-    const today = new Date();
     const timeSheets = await TimeSheetModel.find({
       employee_id: employee_id,
     })
       .populate("employee_id")
-      .populate("break_id")
-      .sort({ pinTime: -1 });
+      .populate("breaks.break_id")
+      .sort({ clockInTimeStamp: -1 });
     return res.json({
       status: true,
       data: timeSheets,
@@ -127,10 +126,10 @@ module.exports.getClockInOutByEmployee = async (req, res, next) => {
 module.exports.getAllTimeSheets = async (req, res, next) => {
   const { currentDate } = req.query;
   try {
-    const timeSheets = await TimeSheetModel.find({}).populate("employee_id").populate("break_id").sort({ pinTime: -1 });
+    const timeSheets = await TimeSheetModel.find({}).populate("employee_id").populate("breaks.break_id").sort({ clockInTimeStamp: -1 });
     const filteredTimeSheets = timeSheets
       .map((timeSheet) => {
-        if (currentDate == moment(timeSheet.pinTime).local().format("YYYY-MM-DD")) {
+        if (currentDate == moment(timeSheet.clockInTimeStamp).local().format("YYYY-MM-DD")) {
           return timeSheet;
         } else return null;
       })
@@ -145,19 +144,25 @@ module.exports.getAllTimeSheets = async (req, res, next) => {
   }
 };
 module.exports.updateTimeSheet = async (req, res, next) => {
-  const { id, pinTime, break_id, description, employee_id } = req.body;
+  const { row, employee_id } = req.body;
   try {
-    const data = { updated_by: employee_id, description: description, pinTime: pinTime };
-    if (break_id !== "") data.break_id = break_id;
-    const updatedRow = await TimeSheetModel.findOneAndUpdate({ _id: id }, data);
-    return res.json({
-      status: true,
-      data: updatedRow,
+    let timeSheet = await TimeSheetModel.findOne({
+      _id: row.id,
     });
-  } catch (err) {
-    console.log(err);
-    return res.json({ status: false, message: "Something went wrong" });
-  }
+    timeSheet.breaks = row.breaks;
+    timeSheet.clockInTimeStamp = row.clockInTimeStamp;
+    timeSheet.clockOutTimeStamp = row.clockOutTimeStamp;
+    if (employee_id != "admin") timeSheet.updated_by = employee_id;
+    await timeSheet
+      .save()
+      .then((savedItem) => {
+        return res.json({ status: true, data: savedItem, message: "Employee clocked out successfully" });
+      })
+      .catch((err) => {
+        console.log(err);
+        return res.json({ status: false, message: "Something went wrong" });
+      });
+  } catch (err) {}
 };
 module.exports.getAllByEmployee = async (req, res, next) => {
   try {
@@ -166,102 +171,87 @@ module.exports.getAllByEmployee = async (req, res, next) => {
       employee_id: employee_id,
     })
       .populate("employee_id")
-      .populate("break_id");
+      .populate("breaks.break_id");
 
-    let startTime = null;
-    let paidBreakStartTime = null;
-    let paidBreakLimit = 0;
-    let index = 0;
-    const timezoneOffset = moment().utcOffset();
     const data = timeSheets
       .map((timeSheet) => {
-        index++;
-        if (timeSheet.pinType === "clocked-in") {
-          startTime = timeSheet.pinTime;
-          if (paidBreakStartTime != null) {
-            let endTime = timeSheet.pinTime;
-            let timeDiff = endTime - paidBreakStartTime;
-            if (timeDiff > paidBreakLimit * 60 * 1000) {
-              timeDiff = paidBreakLimit * 60 * 1000;
-              endTime = new Date(paidBreakStartTime.getTime() + paidBreakLimit * 60 * 1000);
+        let unpaidBreakingHours = 0;
+        let paidBreakingHours = 0;
+        for (i = 0; i < timeSheet.breaks.length; i++) {
+          const breaking = timeSheet.breaks[i];
+          console.log("Breaking=" + breaking);
+          if (breaking.break_id.isPaid) {
+            if (breaking.breakOutTimeStamp !== null && breaking.breakInTimeStamp !== undefined) {
+              paidBreakingHours += breaking.breakOutTimeStamp - breaking.breakInTimeStamp;
+            } else {
+              paidBreakingHours += new Date() - breaking.breakInTimeStamp;
             }
-            paidBreakLimit = 0;
-            const temp = paidBreakStartTime;
-            paidBreakStartTime = null;
-            return {
-              startTime: new Date(temp.getTime() + timezoneOffset * 60 * 1000),
-              endTime: new Date(endTime.getTime() + timezoneOffset * 60 * 1000),
-              type: "paidBreaking",
-              time: timeDiff,
-            };
-          } else return null;
-        } else if (timeSheet.pinType === "clocked-out") {
-          if (timeSheet?.break_id?.isPaid === true) {
-            paidBreakStartTime = timeSheet.pinTime;
-            paidBreakLimit = timeSheet?.break_id?.limit;
+          } else {
+            if (breaking.breakOutTimeStamp !== null && breaking.breakInTimeStamp !== undefined) {
+              unpaidBreakingHours += breaking.breakOutTimeStamp - breaking.breakInTimeStamp;
+            } else {
+              unpaidBreakingHours += new Date() - breaking.breakInTimeStamp;
+            }
           }
-          if (startTime != null) {
-            const endTime = timeSheet.pinTime;
-            const timeDiff = endTime - startTime;
-
-            return {
-              startTime: new Date(startTime.getTime() + timezoneOffset * 60 * 1000),
-              endTime: new Date(endTime.getTime() + timezoneOffset * 60 * 1000),
-              type: "working",
-              time: timeDiff,
-            };
-          } else return null;
         }
+        return {
+          startTime: timeSheet.clockInTimeStamp,
+          endTime: timeSheet.clockOutTimeStamp === null || timeSheet.clockOutTimeStamp === undefined ? new Date() : timeSheet.clockOutTimeStamp,
+          paidBreaking: paidBreakingHours,
+          unpaidBreaking: unpaidBreakingHours,
+          time:
+            timeSheet.clockOutTimeStamp === undefined || timeSheet.clockOutTimeStamp === null
+              ? new Date().getTime() - timeSheet.clockInTimeStamp
+              : timeSheet.clockOutTimeStamp - timeSheet.clockInTimeStamp,
+        };
       })
       .filter((item) => item !== null);
     // Function to sum up time by date
     function sumTimeByDate(data) {
-      const result = {};
-
+      let result = {};
       data.forEach((item) => {
         // console.log(item);
-        const startDate = new Date(item.startTime).toISOString().split("T")[0];
-        const endDate = new Date(item.endTime).toISOString().split("T")[0];
-        let currentDate = new Date(startDate);
+        let startDate = moment(item.startTime).local().format("YYYY-MM-DD");
+        let currentDate = startDate;
+        let endDate = moment(item.endTime).local().format("YYYY-MM-DD");
+        while (currentDate <= endDate) {
+          const isFirstDay = currentDate === startDate;
+          const isLastDay = currentDate === endDate;
 
-        while (currentDate.toISOString().split("T")[0] <= endDate) {
-          const date = currentDate.toISOString().split("T")[0];
-          const isFirstDay = date === startDate;
-          const isLastDay = date === endDate;
-
-          if (!result[date]) {
-            result[date] = {
+          if (!result[currentDate]) {
+            result[currentDate] = {
               working: 0,
               breaking: 0,
               paidBreaking: 0,
+              unpaidBreaking: 0,
             };
           }
 
-          let startTime = new Date(currentDate);
-          startTime.setUTCHours(0, 0, 0, 0);
-          if (isFirstDay) {
-            startTime = new Date(item.startTime);
+          let startTime = item.startTime;
+          if (!isFirstDay) {
+            startTime.setUTCHours(0, 0, 0, 0);
           }
 
-          let endTime = new Date(currentDate);
-          endTime.setUTCHours(23, 59, 59, 999);
-          if (isLastDay) {
-            endTime = new Date(item.endTime);
+          let endTime = item.endTime;
+          if (!isLastDay) {
+            endTime.setUTCHours(23, 59, 59, 999);
           }
 
           const duration = endTime.getTime() - startTime.getTime();
-          result[date][item.type] += duration;
-          currentDate.setDate(currentDate.getDate() + 1);
+          result[currentDate]["working"] += duration;
+          currentDate = moment(currentDate).add(1, "d").format("YYYY-MM-DD");
         }
+        result[startDate]["paidBreaking"] = item.paidBreaking;
+        result[startDate]["unpaidBreaking"] = item.unpaidBreaking;
+        result[startDate]["breaking"] = item.paidBreaking + item.unpaidBreaking;
       });
-
       return Object.entries(result).map(([date, times]) => ({
         date,
         ...times,
       }));
     }
     const dataByDate = sumTimeByDate(data);
-    console.log(data);
+    console.log("🚀 ~ module.exports.getAllByEmployee= ~ dataByDate:", dataByDate);
     // Sum up time by date
     const employee = await EmployeeModel.findOne({ _id: employee_id });
     const payDays = [];
@@ -279,7 +269,6 @@ module.exports.getAllByEmployee = async (req, res, next) => {
     } else if (employee.payType === "biweekly") {
       const today = new Date(todayDate);
       const weekNumber = getWeekNumber(today);
-
       let lastPayDay;
       if (weekNumber % 2 === 0) {
         // If current week is even, the last pay day was on the previous odd week
@@ -288,9 +277,8 @@ module.exports.getAllByEmployee = async (req, res, next) => {
       } else {
         // If current week is odd, the last pay day was on the current odd week
         lastPayDay = new Date(today);
-        lastPayDay.setDate(today.getDate() - (today.getDay() - employee.payDay));
+        lastPayDay.setDate(today.getDate() - 7 - (today.getDay() - employee.payDay));
       }
-
       for (let i = 0; i < 14; i++) {
         const date = new Date(lastPayDay);
         date.setDate(date.getDate() + i);
@@ -327,11 +315,12 @@ module.exports.getAllByEmployee = async (req, res, next) => {
           acc.working += curr.working;
           acc.breaking += curr.breaking;
           acc.paidBreaking += curr.paidBreaking;
+          acc.unpaidBreaking += curr.unpaidBreaking;
           acc.dates[index] = curr.date;
         }
         return acc;
       },
-      { working: 0, breaking: 0, paidBreaking: 0, dates: new Array(payDays.length).fill("") }
+      { working: 0, breaking: 0, paidBreaking: 0, unpaidBreaking: 0, dates: new Array(payDays.length).fill("") }
     );
     const totalData = dataByDate.reduce(
       (acc, curr) => {
@@ -340,12 +329,13 @@ module.exports.getAllByEmployee = async (req, res, next) => {
           acc.working += curr.working;
           acc.breaking += curr.breaking;
           acc.paidBreaking += curr.paidBreaking;
+          acc.unpaidBreaking += curr.unpaidBreaking;
           acc.dates[index] = curr.date;
         }
         acc.total = acc.working + acc.breaking + acc.paidBreaking;
         return acc;
       },
-      { working: 0, breaking: 0, paidBreaking: 0, dates: new Array(payDays.length).fill(""), total: 0 }
+      { working: 0, breaking: 0, paidBreaking: 0, unpaidBreaking: 0, dates: new Array(payDays.length).fill(""), total: 0 }
     );
     return res.json({
       status: true,
@@ -355,6 +345,7 @@ module.exports.getAllByEmployee = async (req, res, next) => {
             working: 0,
             breaking: 0,
             paidBreaking: 0,
+            unpaidBreaking: 0,
           },
       payData: payData,
       totalData: totalData,
