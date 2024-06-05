@@ -1,5 +1,5 @@
 const { getAssignments, addAssignment } = require("../Controllers/AssignmentController");
-const { CheckPin, ClockIn, ClockOut, getPin, updatePin } = require("../Controllers/AuthController");
+const { CheckPin, ClockIn, ClockOut, getPin, updatePin, BreakIn, BreakOut } = require("../Controllers/AuthController");
 const { addBreak, deleteBreak, getBreaks } = require("../Controllers/BreakController");
 const { addEmployee, getEmployees, deleteEmployee, getEmployeesByManager } = require("../Controllers/EmployeeController");
 const {
@@ -18,6 +18,8 @@ const router = require("express").Router();
 router.post("/checkPin", CheckPin);
 router.post("/clockIn", ClockIn);
 router.post("/clockOut", ClockOut);
+router.post("/breakIn", BreakIn);
+router.post("/breakOut", BreakOut);
 
 router.get("/getPin", getPin);
 router.post("/updatePin", updatePin);

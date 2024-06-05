@@ -61,8 +61,6 @@ module.exports.CheckPin = async (req, res, next) => {
           message: results.data,
         });
       }
-
-      next();
     } else return res.json({ status: false });
   } catch (error) {
     console.log(error);
@@ -111,8 +109,7 @@ module.exports.ClockIn = async (req, res, next) => {
       if (result._id) {
         const newTimeSheet = new TimeSheetModel({
           employee_id: result._id,
-          pinTime: new Date(),
-          pinType: "clocked-in",
+          clockInTimeStamp: new Date(),
         });
         await newTimeSheet
           .save()
@@ -140,31 +137,134 @@ module.exports.ClockIn = async (req, res, next) => {
 };
 module.exports.ClockOut = async (req, res, next) => {
   try {
-    const { name, breakName, breakingTypeName } = req.body;
+    const { name } = req.body;
     if (!name) {
-      return res.json({ message: "Employee not found" });
+      return res.json({ message: "Employee name required" });
     }
     const result = await EmployeeModel.findOne({ name: name });
     if (result) {
       if (result._id) {
-        const breakRow = await BreakModel.findOne({
-          name: breakingTypeName,
-        });
-        const newTimeSheet = new TimeSheetModel({
+        const lastTimeSheet = await TimeSheetModel.findOne({
           employee_id: result._id,
-          pinTime: new Date(),
-          pinType: "clocked-out",
-          breakName: breakName,
-          break_id: breakRow?._id ?? null,
+        }).sort({ clockInTimeStamp: -1 });
+
+        if (lastTimeSheet) {
+          lastTimeSheet.clockOutTimeStamp = new Date();
+          await lastTimeSheet
+            .save()
+            .then((savedItem) => {
+              return res.json({ status: true, data: savedItem, message: "Employee clocked out successfully" });
+            })
+            .catch((err) => {
+              return res.json({ status: false, message: "Something went wrong" });
+            });
+        } else {
+          return res.json({ status: false, message: "You need clock-in first" });
+        }
+      } else {
+        return res.json({
+          status: false,
+          message: "Employee not found",
         });
-        await newTimeSheet
-          .save()
-          .then((savedItem) => {
-            return res.json({ status: true, data: savedItem, message: "Employee clocked out successfully" });
-          })
-          .catch((err) => {
-            return res.json({ status: false, message: "Something went wrong" });
+      }
+
+      next();
+    } else return res.json({ status: false, message: "Employee not found" });
+  } catch (error) {
+    console.log(error);
+    return res.send({
+      status: false,
+      message: "Error clocking-out. Please try again.",
+    });
+  }
+};
+module.exports.BreakIn = async (req, res, next) => {
+  try {
+    const { name, breakId } = req.body;
+    console.log(req.body);
+    if (!name) {
+      return res.json({ message: "Employee not found" });
+    }
+    if (!breakId) {
+      return res.json({ message: "Break not found" });
+    }
+    const result = await EmployeeModel.findOne({ name: name });
+    if (result) {
+      if (result._id) {
+        let lastTimeSheet = await TimeSheetModel.findOne({
+          employee_id: result._id,
+        }).sort({ clockInTimeStamp: -1 });
+        if (lastTimeSheet) {
+          if (lastTimeSheet.breaks) {
+            lastTimeSheet.breaks.push({
+              breakInTimeStamp: new Date(),
+              breakOutTimeStamp: null,
+              break_id: breakId,
+            });
+          }
+          await lastTimeSheet
+            .save()
+            .then((savedItem) => {
+              return res.json({ status: true, data: savedItem, message: "Employee break in successfully" });
+            })
+            .catch((err) => {
+              return res.json({ status: false, message: "Something went wrong" });
+            });
+        } else {
+          return res.json({ status: false, message: "You need clock-in first" });
+        }
+      } else {
+        return res.json({
+          status: false,
+          message: result.data,
+        });
+      }
+
+      next();
+    } else return res.json({ status: false });
+  } catch (error) {
+    console.log(error);
+    return res.send({
+      status: false,
+      message: "Error clocking-in. Please try again.",
+    });
+  }
+};
+module.exports.BreakOut = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.json({ message: "Employee name required" });
+    }
+    const result = await EmployeeModel.findOne({ name: name });
+    if (result) {
+      if (result._id) {
+        let lastTimeSheet = await TimeSheetModel.findOne({
+          employee_id: result._id,
+        }).sort({ clockInTimeStamp: -1 });
+
+        if (lastTimeSheet) {
+          let breaks = lastTimeSheet.breaks.sort((a, b) => {
+            return a.breakInTimeStamp - b.breakInTimeStamp;
           });
+          if (breaks.length <= 0) {
+            return res.json({ status: false, message: "You need to break-in first" });
+          }
+          if (breaks[breaks.length - 1].breakOutTimeStamp) {
+            return res.json({ status: false, message: "You already break-out" });
+          }
+          breaks[breaks.length - 1].breakOutTimeStamp = new Date();
+          await lastTimeSheet
+            .save()
+            .then((savedItem) => {
+              return res.json({ status: true, data: savedItem, message: "Employee clocked out successfully" });
+            })
+            .catch((err) => {
+              return res.json({ status: false, message: "Something went wrong" });
+            });
+        } else {
+          return res.json({ status: false, message: "You need clock-in first" });
+        }
       } else {
         return res.json({
           status: false,

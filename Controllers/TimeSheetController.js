@@ -18,7 +18,9 @@ module.exports.getEmployeeStatus = async (req, res, next) => {
           .populate("workShifts");
         const timeSheet = await TimeSheetModel.findOne({
           employee_id: employee._id,
-        }).sort({ pinTime: -1 });
+        })
+          .populate("breaks.break_id")
+          .sort({ clockInTimeStamp: -1 });
         // Check if the current time is between the start and end times
         let isAssigned = false;
         if (assignment !== null) {
@@ -38,10 +40,14 @@ module.exports.getEmployeeStatus = async (req, res, next) => {
         return {
           _id: employee._id,
           name: employee.name,
-          pin: employee.pin,
           assignment: assignment,
-          status: timeSheet?.pinType ?? "",
-          breakName: timeSheet?.breakName ?? "",
+          clockInTimeStamp: timeSheet?.clockInTimeStamp ?? null,
+          clockOutTimeStamp: timeSheet?.clockOutTimeStamp ?? null,
+          breaks: timeSheet?.breaks ?? [],
+          history: timeSheet?.history ?? [],
+          description: timeSheet?.description ?? "",
+          updated_by: timeSheet?.updated_by ?? null,
+          modified_at: timeSheet?.modified_at ?? null,
           isAssigned: isAssigned,
         };
       })
