@@ -1,7 +1,7 @@
 const { getAssignments, addAssignment } = require("../Controllers/AssignmentController");
 const { CheckPin, ClockIn, ClockOut, getPin, updatePin, BreakIn, BreakOut } = require("../Controllers/AuthController");
 const { addBreak, deleteBreak, getBreaks, updateBreak } = require("../Controllers/BreakController");
-const { addEmployee, getEmployees, deleteEmployee, getEmployeesByManager } = require("../Controllers/EmployeeController");
+const { addEmployee, getEmployees, deleteEmployee, getEmployeesByManager, updateEmployee } = require("../Controllers/EmployeeController");
 const {
   getEmployeeStatus,
   getEmployeeCountsByType,
@@ -48,6 +48,7 @@ router.get("/getWorkShifts", getWorkShifts);
 router.post("/deleteWorkShift", deleteWorkShift);
 
 router.post("/addEmployee", addEmployee);
+router.post("/updateEmployee", updateEmployee);
 router.get("/getEmployees", getEmployees);
 router.get("/getEmployeesByManager", getEmployeesByManager);
 router.post("/deleteEmployee", deleteEmployee);

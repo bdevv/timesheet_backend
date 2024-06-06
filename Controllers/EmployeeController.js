@@ -20,6 +20,42 @@ module.exports.addEmployee = async (req, res, next) => {
       return res.json({ status: false, message: "Something went wrong" });
     });
 };
+module.exports.updateEmployee = async (req, res, next) => {
+  try {
+    const employee_id = req.body._id;
+    if (employee_id === undefined || employee_id === null) {
+      const newEmployee = new EmployeeModel({
+        name: req.body.name,
+        pin: req.body.pin,
+        isManager: req.body.isManager,
+        payType: req.body.payType,
+        payDay: req.body.payDay,
+      });
+      await newEmployee
+        .save()
+        .then((savedItem) => {
+          return res.json({ status: true, data: savedItem });
+        })
+        .catch((err) => {
+          return res.json({ status: false, message: "Something went wrong" });
+        });
+    } else {
+      await EmployeeModel.updateOne(
+        { _id: employee_id },
+        {
+          name: req.body.name,
+          pin: req.body.pin,
+          isManager: req.body.isManager,
+          payType: req.body.payType,
+          payDay: req.body.payDay,
+        }
+      );
+      return res.json({ status: true });
+    }
+  } catch (err) {
+    return res.json({ status: false, message: "Something went wrong" });
+  }
+};
 module.exports.getEmployees = async (req, res, next) => {
   const items = await EmployeeModel.find({});
   if (items) {
