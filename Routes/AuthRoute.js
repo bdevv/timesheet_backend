@@ -9,6 +9,7 @@ const {
   getAllByEmployee,
   getAllTimeSheets,
   updateTimeSheet,
+  deleteTimeSheet,
 } = require("../Controllers/TimeSheetController");
 const { addMessage, getMessages, deleteMessage, getPublicMessages, getMessagesByEmployee, markAsRead } = require("../Controllers/MessageController");
 const { addWorkOrder, getWorkOrders, deleteWorkOrder } = require("../Controllers/WorkOrderController");
@@ -57,6 +58,7 @@ router.get("/getClockInOutByEmployee", getClockInOutByEmployee);
 router.get("/getAllTimeSheets", getAllTimeSheets);
 router.get("/getAllByEmployee", getAllByEmployee);
 router.post("/updateTimeSheet", updateTimeSheet);
+router.post("/deleteTimeSheet", deleteTimeSheet);
 
 router.get("/getCurrentTime", (req, res) => {
   res.send({ status: true, time: new Date() });

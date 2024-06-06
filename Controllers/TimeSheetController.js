@@ -156,13 +156,24 @@ module.exports.updateTimeSheet = async (req, res, next) => {
     await timeSheet
       .save()
       .then((savedItem) => {
-        return res.json({ status: true, data: savedItem, message: "Employee clocked out successfully" });
+        return res.json({ status: true, data: savedItem, message: "Timesheet updated successfully" });
       })
       .catch((err) => {
         console.log(err);
         return res.json({ status: false, message: "Something went wrong" });
       });
   } catch (err) {}
+};
+module.exports.deleteTimeSheet = async (req, res, next) => {
+  const { id } = req.body;
+  try {
+    let timeSheet = await TimeSheetModel.deleteOne({
+      _id: id,
+    });
+    return res.json({ status: true, message: "TimeSheet removed successfully" });
+  } catch (err) {
+    return res.json({ status: false, message: "Something went wrong" });
+  }
 };
 module.exports.getAllByEmployee = async (req, res, next) => {
   try {
