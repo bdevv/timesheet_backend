@@ -15,6 +15,40 @@ module.exports.addBreak = async (req, res, next) => {
       return res.json({ status: false, message: "Something went wrong" });
     });
 };
+
+module.exports.updateBreak = async (req, res, next) => {
+  console.log(req.body);
+  try {
+    const break_id = req.body._id;
+    if (break_id === undefined || break_id === null) {
+      const newBreak = new BreakModel({
+        name: req.body.name,
+        limit: req.body.limit,
+        isPaid: req.body.isPaid,
+      });
+      await newBreak
+        .save()
+        .then((savedItem) => {
+          return res.json({ status: true, data: savedItem });
+        })
+        .catch((err) => {
+          return res.json({ status: false, message: "Something went wrong" });
+        });
+    } else {
+      await BreakModel.updateOne(
+        { _id: break_id },
+        {
+          name: req.body.name,
+          limit: req.body.limit,
+          isPaid: req.body.isPaid,
+        }
+      );
+      return res.json({ status: true });
+    }
+  } catch (err) {
+    return res.json({ status: false, message: "Something went wrong" });
+  }
+};
 module.exports.getBreaks = async (req, res, next) => {
   const items = await BreakModel.find({});
   if (items) {
@@ -24,13 +58,9 @@ module.exports.getBreaks = async (req, res, next) => {
 
 module.exports.deleteBreak = async (req, res, next) => {
   try {
-    const item = await BreakModel.findOne({ name: req.body.name });
-    if (item) {
-      await BreakModel.deleteOne({ _id: item.id });
-      return res.json({ status: true });
-    }
+    await BreakModel.deleteOne({ _id: req.body.id });
+    return res.json({ status: true });
   } catch (err) {
-    console.log(err);
     return res.json({ status: false, message: "Something went wrong" });
   }
 };

@@ -1,6 +1,6 @@
 const { getAssignments, addAssignment } = require("../Controllers/AssignmentController");
 const { CheckPin, ClockIn, ClockOut, getPin, updatePin, BreakIn, BreakOut } = require("../Controllers/AuthController");
-const { addBreak, deleteBreak, getBreaks } = require("../Controllers/BreakController");
+const { addBreak, deleteBreak, getBreaks, updateBreak } = require("../Controllers/BreakController");
 const { addEmployee, getEmployees, deleteEmployee, getEmployeesByManager } = require("../Controllers/EmployeeController");
 const {
   getEmployeeStatus,
@@ -26,6 +26,7 @@ router.get("/getPin", getPin);
 router.post("/updatePin", updatePin);
 
 router.post("/addBreak", addBreak);
+router.post("/updateBreak", updateBreak);
 router.get("/getBreaks", getBreaks);
 router.post("/deleteBreak", deleteBreak);
 
