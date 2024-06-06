@@ -28,11 +28,11 @@ module.exports.getEmployeeStatus = async (req, res, next) => {
             let startTime = moment();
             startTime.set("hour", parseInt(shift.startTime.split(":")[0]));
             startTime.set("minute", parseInt(shift.startTime.split(":")[1]));
-            startTime.set("second", parseInt(shift.startTime.split(":")[2]));
+            startTime.set("second", 0);
             let endTime = moment();
             endTime.set("hour", parseInt(shift.endTime.split(":")[0]));
             endTime.set("minute", parseInt(shift.endTime.split(":")[1]));
-            endTime.set("second", parseInt(shift.endTime.split(":")[2]));
+            endTime.set("second", 0);
             if (startTime > endTime) endTime.add(1, "day");
             if (moment() >= startTime && moment() <= endTime) isAssigned = true;
           });

@@ -13,7 +13,7 @@ const {
 } = require("../Controllers/TimeSheetController");
 const { addMessage, getMessages, deleteMessage, getPublicMessages, getMessagesByEmployee, markAsRead } = require("../Controllers/MessageController");
 const { addWorkOrder, getWorkOrders, deleteWorkOrder, updateWorkOrder } = require("../Controllers/WorkOrderController");
-const { addWorkShift, getWorkShifts, deleteWorkShift } = require("../Controllers/WorkShiftController");
+const { addWorkShift, getWorkShifts, deleteWorkShift, updateWorkShift } = require("../Controllers/WorkShiftController");
 
 const router = require("express").Router();
 router.post("/checkPin", CheckPin);
@@ -43,6 +43,7 @@ router.post("/deleteMessage", deleteMessage);
 router.post("/markAsRead", markAsRead);
 
 router.post("/addWorkShift", addWorkShift);
+router.post("/updateWorkShift", updateWorkShift);
 router.get("/getWorkShifts", getWorkShifts);
 router.post("/deleteWorkShift", deleteWorkShift);
 
