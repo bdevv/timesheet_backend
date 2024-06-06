@@ -12,7 +12,7 @@ const {
   deleteTimeSheet,
 } = require("../Controllers/TimeSheetController");
 const { addMessage, getMessages, deleteMessage, getPublicMessages, getMessagesByEmployee, markAsRead } = require("../Controllers/MessageController");
-const { addWorkOrder, getWorkOrders, deleteWorkOrder } = require("../Controllers/WorkOrderController");
+const { addWorkOrder, getWorkOrders, deleteWorkOrder, updateWorkOrder } = require("../Controllers/WorkOrderController");
 const { addWorkShift, getWorkShifts, deleteWorkShift } = require("../Controllers/WorkShiftController");
 
 const router = require("express").Router();
@@ -31,6 +31,7 @@ router.get("/getBreaks", getBreaks);
 router.post("/deleteBreak", deleteBreak);
 
 router.post("/addWorkOrder", addWorkOrder);
+router.post("/updateWorkOrder", updateWorkOrder);
 router.get("/getWorkOrders", getWorkOrders);
 router.post("/deleteWorkOrder", deleteWorkOrder);
 

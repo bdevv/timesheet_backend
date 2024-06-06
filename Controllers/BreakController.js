@@ -17,7 +17,6 @@ module.exports.addBreak = async (req, res, next) => {
 };
 
 module.exports.updateBreak = async (req, res, next) => {
-  console.log(req.body);
   try {
     const break_id = req.body._id;
     if (break_id === undefined || break_id === null) {
