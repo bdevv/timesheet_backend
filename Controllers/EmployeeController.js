@@ -30,6 +30,7 @@ module.exports.updateEmployee = async (req, res, next) => {
         isManager: req.body.isManager,
         payType: req.body.payType,
         payDay: req.body.payDay,
+        created_date: new Date(),
       });
       await newEmployee
         .save()

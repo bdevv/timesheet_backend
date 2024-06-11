@@ -21,7 +21,7 @@ const employeeSchema = new mongoose.Schema(
     },
     created_date: {
       type: Date,
-      required: true,
+      default: Date.now,
     },
   },
   { collection: "Employee" }
