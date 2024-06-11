@@ -49,9 +49,13 @@ module.exports.updateBreak = async (req, res, next) => {
   }
 };
 module.exports.getBreaks = async (req, res, next) => {
-  const items = await BreakModel.find({});
-  if (items) {
-    return res.json({ status: true, data: items });
+  try {
+    const items = await BreakModel.find({});
+    if (items) {
+      return res.json({ status: true, data: items });
+    }
+  } catch (err) {
+    return res.json({ status: false, message: "Something went wrong" });
   }
 };
 
