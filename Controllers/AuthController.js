@@ -72,8 +72,8 @@ module.exports.CheckPin = async (req, res, next) => {
 };
 module.exports.getPin = async (req, res, next) => {
   try {
-    const { employee_id } = req.body;
-    const result = await EmployeeModel.findOne({ id: employee_id });
+    const { employee_id } = req.query;
+    const result = await EmployeeModel.findOne({ _id: employee_id });
     if (result) {
       return res.json({ status: true, pin: result.pin });
     } else return res.json({ status: false });
