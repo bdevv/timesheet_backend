@@ -16,9 +16,13 @@ module.exports.addWorkShift = async (req, res, next) => {
     });
 };
 module.exports.getWorkShifts = async (req, res, next) => {
-  const items = await WorkShiftModel.find({});
-  if (items) {
-    return res.json({ status: true, data: items });
+  try {
+    const items = await WorkShiftModel.find({});
+    if (items) {
+      return res.json({ status: true, data: items });
+    }
+  } catch (err) {
+    return res.json({ status: false, message: "Something went wrong" });
   }
 };
 

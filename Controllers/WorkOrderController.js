@@ -43,9 +43,13 @@ module.exports.updateWorkOrder = async (req, res, next) => {
   }
 };
 module.exports.getWorkOrders = async (req, res, next) => {
-  const items = await WorkOrderModel.find({});
-  if (items) {
-    return res.json({ status: true, data: items });
+  try {
+    const items = await WorkOrderModel.find({});
+    if (items) {
+      return res.json({ status: true, data: items });
+    }
+  } catch (err) {
+    return res.json({ status: false, message: "Something went wrong" });
   }
 };
 module.exports.deleteWorkOrder = async (req, res, next) => {
