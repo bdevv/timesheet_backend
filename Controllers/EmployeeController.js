@@ -58,11 +58,16 @@ module.exports.updateEmployee = async (req, res, next) => {
   }
 };
 module.exports.getEmployees = async (req, res, next) => {
-  const items = await EmployeeModel.find({});
-  if (items) {
-    return res.json({ status: true, data: items });
-  } else {
-    return res.json({ status: false, message: "Employee not found" });
+  try {
+    const items = await EmployeeModel.find({});
+    if (items) {
+      return res.json({ status: true, data: items });
+    } else {
+      return res.json({ status: false, message: "Employee not found" });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.json({ status: false, data: [] });
   }
 };
 module.exports.getEmployeesByManager = async (req, res, next) => {
