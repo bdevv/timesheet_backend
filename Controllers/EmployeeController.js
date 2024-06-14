@@ -82,7 +82,7 @@ module.exports.getEmployeesByManager = async (req, res, next) => {
 };
 module.exports.deleteEmployee = async (req, res, next) => {
   try {
-    const item = await EmployeeModel.findOne({ name: req.body.name });
+    const item = await EmployeeModel.findOne({ _id: req.body.id });
 
     if (item) {
       await EmployeeModel.deleteOne({ _id: item.id });
