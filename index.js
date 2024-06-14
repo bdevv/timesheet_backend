@@ -26,7 +26,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://qa.timesheet.pastiansbakery.com", "http://web2:3002", "http://timesheet.gacud.com"],
+    origin: [
+      "http://localhost:3000",
+      "http://qa.timesheet.pastiansbakery.com",
+      "http://web2:3002",
+      "http://timesheet.gacud.com",
+      "https://timesheet.gacud.com",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
